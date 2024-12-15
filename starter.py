@@ -31,5 +31,4 @@ if start_script.returncode == 0:
 else:
     print("Error occured in Lemma executing:", result_stderr)
 
-print("-"*100)
 print("Checking framework finish!!")
