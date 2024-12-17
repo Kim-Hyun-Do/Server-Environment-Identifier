@@ -9,7 +9,7 @@ It checks target ip whether to use which framework and software. The purpose of 
 The environment_identifier.py is on lemma(https://github.com/sleepyeinstein/lemma) and starter.py executes the lemma and streams the result.
 
 ## Usage
-1. Make your lemma url there is environment_.py as lemma usage(https://github.com/sleepyeinstein/lemma)
+1. Make your lemma url there is environment_identifier.py as lemma usage(https://github.com/sleepyeinstein/lemma)
 ![lemma result_up](https://github.com/user-attachments/assets/ec6631b4-cfa6-4202-acb7-001fea61ae21)
 2. Input your lemma url in starter.py source code.
 3. Start starter.py!!
