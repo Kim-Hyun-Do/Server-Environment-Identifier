@@ -1,7 +1,7 @@
 import subprocess
 import sys
 
-lemma_url = "https://iraiyq4k2ju26uxpobhnnjz22i0lnjuw.lambda-url.us-east-1.on.aws/?key=1c5a4a86a8f443d4\n"
+lemma_url = "Your lemma url\n"
 
 print("[+] Setting Lambda URL to start Lemma\n")
 start_lemma = subprocess.Popen(
