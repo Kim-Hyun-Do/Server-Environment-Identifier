@@ -1,6 +1,7 @@
 import subprocess
+import sys
 
-lemma_url = "Your lemma url"
+lemma_url = "Your lemma url\n"
 
 print("[+] Setting Lamda URL to start Lemma\n")
 start_lemma = subprocess.Popen(
@@ -12,11 +13,14 @@ start_lemma = subprocess.Popen(
 )
 stdout, stderr = start_lemma.communicate(input=lemma_url)
 
-ip = input("IP to check framework(port available) : ")
-print("\n[+] Framework classifying......")
+print("[+] Executing framework classification on lemma......")
+
+command = ["lemma", "--", "framework_classification_.py"]
+for arg in sys.argv[1:]:
+    command.append(arg)
+    
 start_script = subprocess.Popen(
-    f"lemma -- Framework_classification_lemma.py --ip {ip}",
-    shell=True,  
+    command,  
     stdout=subprocess.PIPE,
     stderr=subprocess.PIPE,
     text=True
@@ -25,10 +29,11 @@ result_stdout, result_stderr = start_script.communicate()
 
 
 if start_script.returncode == 0:
-    print("\n[+] Framework classifying success!!\n")
-    print("-"*100)
+    print("\n[+] Framework classification executing complete\n")
+    print("Result")
+    print("*"*100)
     print(result_stdout)
 else:
     print("Error occured in Lemma executing:", result_stderr)
-
-print("Checking framework finish!!")
+    sys.exit()
+print("*"*100)
