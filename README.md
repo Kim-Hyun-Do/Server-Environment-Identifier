@@ -3,7 +3,8 @@ It checks target ip whether to use which framework and software. The purpose of 
 
 
 ## Pipeline
-![pipeline](https://github.com/user-attachments/assets/a8156dd4-0c91-42df-8125-584e1f7ebea8)
+![LOGO 변신~!!](https://github.com/user-attachments/assets/692dbc32-829a-42ec-9c65-eb067f25888f)
+
 
 
 The environment_identifier.py is on lemma(https://github.com/sleepyeinstein/lemma) and starter.py executes the lemma and streams the result.
