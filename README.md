@@ -3,7 +3,8 @@ It checks target ip whether to use which framework and software. The purpose of 
 
 
 ## Pipeline
-![LOGO 변신~!!](https://github.com/user-attachments/assets/692dbc32-829a-42ec-9c65-eb067f25888f)
+![화면 캡처 2024-12-22 235603](https://github.com/user-attachments/assets/05bf6786-e23f-4cee-bbb7-d5084526ac65)
+
 
 
 
