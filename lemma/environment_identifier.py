@@ -27,7 +27,7 @@ class Apache_Scanner:
         
     @runner_apache.add_list        
     def directory_scan(self):
-        dir_list = ["directory", ".htaccess", "server-status", ""]
+        dir_list = ["directory", ".htaccess", "server-status", "server-info", ""]
         try:
             print("[*] Apache directroy scanning....")
             for directory in dir_list:
@@ -36,12 +36,12 @@ class Apache_Scanner:
                 if result:
                     print("[+] Directory scan result : ")
                     print(result.group(0))
-                    #return result.group(0)
+                    break
         except requests.exceptions.Timeout:
-            print("[!] Apache directory scanning timeout!!")
+            print("[!] Apache directory scanning timeout!!") # pass 
         except requests.RequestException as e:
-            print(f"[!] Error occured: {e}")
-    
+            print(f"[!] Apache directory scanning error occured: {e}") #pass
+     
     @runner_apache.add_list
     def server_header_scan(self):
         command = ["curl", "-I", "-A", "Mozilla/5.0", f"http://{self.host}"]
@@ -53,15 +53,48 @@ class Apache_Scanner:
                 if match:
                     print(f"[+] Detected Apache Version : ")
                     print(match.group(0))
-                    #return match.group(0)
-            else:
-                print("[-] Apache server header scan failed.")            
+                    #return match.group(0)          
         except subprocess.TimeoutExpired:
             print(f"[!] Apache server header scanning timeout!!")
         except Exception as e:
-            print(f"[!] Error occurred: {e}")       
+            print(f"[!] Apache server header scanning error occurred: {e}") 
+
+    @runner_apache.add_list
+    def xampp_scan(self):
+        try:
+            print("[*] xampp existing scanning....")
+            response = requests.get(f"http://{self.host}/dashboard/", timeout=10)
+            if response.status_code == 200 and "Welcome to XAMPP" in response.text:
+                print("[+] xampp using apache server detected!!")
+        except requests.exceptions.Timeout:
+            print("[!] xampp existing scanning timeout!!")
+        except requests.RequestException as e:
+            print(f"[!] xampp existing scanning error occured: {e}")
+
+    @runner_apache.add_list
+    def ofbiz_scan(self):
+        try:
+            print("[*] Apache OFBiz existing scanning....")
+            response = requests.get(f"http://{self.host}", timeout=10)
+            if response.status_code == 200 and any(keyword in response.text for keyword in ["Apache OFBiz.", "OFBiz.Visitor="]):
+                print("[+] Apache OFBiz detected!!")
+        except requests.exceptions.Timeout:
+            print("[!] Apache OFBiz existing scanning timeout!!")
+        except requests.RequestException as e:
+            print(f"[!] Apache OFBiz existing scanning error occured: {e}")        
     
-    
+    @runner_apache.add_list
+    def default_page_scan(self):
+        try:
+            print("[*] Apache default page existing scanning....")
+            response = requests.get(f"http://{self.host}", timeout=10)
+            if any(keyword in response.text for keyword in ["Apache HTTP Server Test Page", "Apache2 Debian Default Page: It works", "Apache2 Ubuntu Default Page: It works"]):
+                print("[+] Apache Server detected!!")
+        except requests.exceptions.Timeout:
+            print("[!] Apache default page existing scanning timeout!!")
+        except requests.RequestException as e:
+            print(f"[!] Apache default page existing scanning error occured: {e}")                   
+
 runner_tomcat = Runner()
 class Tomcat_Scanner:
     def __init__(self, host):
@@ -79,31 +112,83 @@ class Tomcat_Scanner:
                     print(f"[+] Detected Tomcat server header :")
                     print(match.group(0))
                     #return match.group(0)
-            else:
-                print("[-] Tomcat server header scan failed.")
         except subprocess.TimeoutExpired:
             print(f"[!] Tomcat server header scanning timeout!!")
         except Exception as e:
-            print(f"[!] Error occurred: {e}")  
+            print(f"[!] Tomcat server header scanning error occurred: {e}")  
 
     @runner_tomcat.add_list
     def directory_scan(self):
-        dir_list = ["directory", ""]
+        dir_list = ["directory", "../"]
         try:
             print("[*] Tomcat directory scanning....")
             for directory in dir_list:
                 response = requests.get(f"http://{self.host}/{directory}", timeout=10)
-                result = re.search(r'Apache Tomcat/\d+\.\d+(\.\d+)?', response.text)
+                result = re.search(r'Apache Tomcat(?:/\d+\.\d+(?:\.\d+)?)?', response.text)
                 if result:
                     print("[+] Directory scan result : ")
                     print(result.group(0))
-                    #return result.group(0)
+                    break
         except requests.exceptions.Timeout:
             print("[!] Tomcat directory scanning timeout!!")
         except requests.RequestException as e:
-            print(f"[!] Error occured: {e}")
+            print(f"[!] Tomcat directory scanning error occured: {e}")
 
-    
+    @runner_tomcat.add_list
+    def stack_trace_scan(self):
+        try:
+            print("[*] Tomcat stack trace scanning....")
+            response = requests.get(f"http://{self.host}/?f=\[", timeout=10)
+            if response.status_code == 400:
+                result = re.findall(r'org\.apache|tomcat', response.text)
+                if result:
+                    print("[+] Tomcat server detected!!")
+        except requests.exceptions.Timeout:
+            print("[!] Tomcat stack trace scanning timeout!!")
+        except requests.RequestException as e:
+            print(f"[!] Tomcat stack trace scanning error occured: {e}")
+            
+    @runner_tomcat.add_list
+    def manager_page_scan(self):
+        dir_list = ["/host-manager/html", "/manager/status", "/manager/html", "/docs/", "/examples/", "/..;/manager/html", "/..;/..;/manager/html;/", "/..;/host-manager/html", "/..;/..;/host-manager/html;/", "/1234/..;/manager/html", "/1234/..;/host-manager/html"]
+        success_dirs = []
+        extract_list = [r"(?i)(apache\s+tomcat|tomcat-users\.xml)", r"Version\s+([0-9.]+),", r"(?i)/lib/([a-z0-9.]+)/webapps", r"(?i)<h3>Apache\s+Tomcat/([0-9.]+)" ]
+        base64_auth_headers = ["dG9tY2F0OnRvbWNhdA==", "dG9tY2F0OnMzY3JldA==", "YWRtaW46YWRtaW4="] #admin:admin, tomcat:s3cret, tomcat:tomcat
+
+        
+        find = False
+        print("[*] Tomcat manager page scanning....")
+        for directory in dir_list:
+            try:
+                response = requests.get(f"http://{self.host}{directory}", timeout=10)
+                if response.status_code == 200:
+                    for pattern in extract_list:
+                        result = re.findall(pattern, response.text)
+                        success_dirs.extend(result)
+                elif response.status_code == 401:
+                    find = True
+                    for header in base64_auth_headers:
+                        res = requests.get(f"http://{self.host}{directory}", headers={"Authorization" : f"Basic {header}"} , timeout=10)
+                        if res.status_code == 200:
+                            for pattern in extract_list:
+                                result_auth = re.findall(pattern, res.text)
+                                success_dirs.extend(result_auth)
+                            break 
+            except requests.exceptions.Timeout:
+                print("[!] Tomcat manage page scanning timeout!!")
+            except requests.RequestException as e:
+                print(f"[!] Tomcat manage page scanning error occured: {e}")  
+                              
+        if success_dirs:
+            success_dirs = list(set(success_dirs))
+            print("[+] Tomcat manager page scan result : ")
+            for directory in success_dirs:
+                print(directory)
+        elif find:
+            print("[+] Tomcat server detected!!")
+
+                    
+
 runner_spring = Runner()
 class Spring_Scanner:
     def __init__(self, host):
@@ -122,7 +207,7 @@ class Spring_Scanner:
         except requests.exceptions.Timeout:
             print("[!] Spring error page scanning timeout!!")
         except requests.RequestException as e:
-            print(f"[!] Error occured: {e}")
+            print(f"[!] Spring error page scanning error occured: {e}")
         
     #Spring Boot detect
     @runner_spring.add_list
@@ -136,7 +221,7 @@ class Spring_Scanner:
         except requests.exceptions.Timeout:
             print("[!] Spring actuator scanning timeout!!")
         except requests.RequestException as e:
-            print(f"[!] Error occured: {e}")
+            print(f"[!] Spring actuator scanning error occured: {e}")
         
     #Spring Framework detect
     @runner_spring.add_list
@@ -150,12 +235,10 @@ class Spring_Scanner:
                 if match:
                     print(f"[+] Spring Framework detected!!")
                     #return match
-            else:
-                print("[-] Spring powered header scan failed.")
         except subprocess.TimeoutExpired:
             print(f"[!] Spring powered header scanning timeout!!")
         except Exception as e:
-            print(f"[!] Error occurred: {e}")    
+            print(f"[!] Spring powered header scanning error occurred: {e}")    
     
     #Spring Security detect
     @runner_spring.add_list
@@ -170,12 +253,10 @@ class Spring_Scanner:
                 if match1 or match2:
                     print(f"[+] Spring Security detected!!")
                     #return match1 or match2
-            else:
-                print("[-] Spring authenticate header scan failed.")
         except subprocess.TimeoutExpired:
             print(f"[!] Spring authenticate header scanning timeout!!")
         except Exception as e:
-            print(f"[!] Error occurred: {e}")
+            print(f"[!] Spring authenticate header scanning error occurred: {e}")
             
 runner_php = Runner()
 class PHP_Scanner:
@@ -194,12 +275,10 @@ class PHP_Scanner:
                     print(f"[+] PHP detected: ")
                     for match in matches:
                         print(match)
-            else:
-                print("[-] PHP response header scan failed.")
         except subprocess.TimeoutExpired:
             print(f"[!] PHP response header scanning timeout!!")
         except Exception as e:
-            print(f"[!] Error occurred: {e}")
+            print(f"[!] PHP response header scanning error occurred: {e}")
     
     @runner_php.add_list
     def warning_header_scan(self):
@@ -208,17 +287,15 @@ class PHP_Scanner:
             print("[*] PHP warning header scanning....")
             result = subprocess.run(command, capture_output=True, timeout=10, text=True)
             if result.returncode == 0:
-                matches = re.findall(r"PHP Warning: .*?", result.stdout)
+                matches = re.findall(r"PHP Warning: [^\n]*(?:\n\s+.*?)*", result.stdout)
                 if matches:
                     print(f"[+] PHP detected: ")
                     for match in matches:
                         print(match)
-            else:
-                print("[-] PHP warning header scan failed.")
         except subprocess.TimeoutExpired:
             print(f"[!] PHP warning header scanning timeout!!")
         except Exception as e:
-            print(f"[!] Error occurred: {e}")
+            print(f"[!] PHP warning header scanning error occurred: {e}")
     
     @runner_php.add_list
     def warning_body_scan(self):
@@ -227,17 +304,15 @@ class PHP_Scanner:
             print("[*] PHP warning body scanning....")
             result = subprocess.run(command, capture_output=True, timeout=10, text=True)
             if result.returncode == 0:
-                matches = re.findall(r"PHP Warning: .*?", result.stdout)
+                matches = re.findall(r"PHP Warning: [^\n]*(?:\n\s+.*?)*", result.stdout)
                 if matches:
                     print(f"[+] PHP detected: ")
                     for match in matches:
                         print(match)
-            else:
-                print("[-] PHP warning body scan failed.")
         except subprocess.TimeoutExpired:
             print(f"[!] PHP warning body scanning timeout!!")
         except Exception as e:
-            print(f"[!] Error occurred: {e}")
+            print(f"[!] PHP warning body scanning error occurred: {e}")
     
     @runner_php.add_list
     def php_cookie_scan(self):     
@@ -251,12 +326,10 @@ class PHP_Scanner:
                     print(f"[+] PHP detected: ")
                     print(match.group(0))
                     #return match.group(0)
-            else:
-                print("[-] PHP cookie header scan failed.")
         except subprocess.TimeoutExpired:
             print(f"[!] PHP cookie header scanning timeout!!")
         except Exception as e:
-            print(f"[!] Error occurred: {e}")                                                                                                      
+            print(f"[!] PHP cookie header scanning error occurred: {e}")                                                                                                      
     
     @runner_php.add_list
     def robots_directory_scan(self):
@@ -271,7 +344,7 @@ class PHP_Scanner:
         except requests.exceptions.Timeout:
             print("[!] PHP robots directory scanning timeout!!")
         except requests.RequestException as e:
-            print(f"[!] Error occurred: {e}") 
+            print(f"[!] PHP robots directory scanning error occurred: {e}") 
 
                     
 def scan_result(host, fws):
@@ -345,7 +418,3 @@ if __name__ == "__main__":
             print(f"[!] Error occured: {e}")
     else:
         print("[!] Check your arguments!!")
-        
-        
-    
-
