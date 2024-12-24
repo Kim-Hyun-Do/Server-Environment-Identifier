@@ -38,9 +38,9 @@ class Apache_Scanner:
                     print(result.group(0))
                     break
         except requests.exceptions.Timeout:
-            print("[!] Apache directory scanning timeout!!") # pass 
+            print("[!] Apache directory scanning timeout!!")
         except requests.RequestException as e:
-            print(f"[!] Apache directory scanning error occured: {e}") #pass
+            print(f"[!] Apache directory scanning error occured: {e}") 
      
     @runner_apache.add_list
     def server_header_scan(self):
@@ -75,8 +75,10 @@ class Apache_Scanner:
     def ofbiz_scan(self):
         try:
             print("[*] Apache OFBiz existing scanning....")
-            response = requests.get(f"http://{self.host}", timeout=10)
-            if response.status_code == 200 and any(keyword in response.text for keyword in ["Apache OFBiz.", "OFBiz.Visitor="]):
+            response = requests.get(f"http://{self.host}", timeout=10) 
+            body_find = any(keyword in response.text for keyword in ["Apache OFBiz.", "OFBiz.Visitor="])
+            header_find = any(keyword in str(response.headers.values()) for keyword in ["Apache OFBiz.", "OFBiz.Visitor="])
+            if body_find or header_find:
                 print("[+] Apache OFBiz detected!!")
         except requests.exceptions.Timeout:
             print("[!] Apache OFBiz existing scanning timeout!!")
@@ -88,7 +90,7 @@ class Apache_Scanner:
         try:
             print("[*] Apache default page existing scanning....")
             response = requests.get(f"http://{self.host}", timeout=10)
-            if any(keyword in response.text for keyword in ["Apache HTTP Server Test Page", "Apache2 Debian Default Page: It works", "Apache2 Ubuntu Default Page: It works"]):
+            if any(keyword in response.text for keyword in ["Apache HTTP Server Test Page", "Apache2 Ubuntu Default Page: It works"]):
                 print("[+] Apache Server detected!!")
         except requests.exceptions.Timeout:
             print("[!] Apache default page existing scanning timeout!!")
