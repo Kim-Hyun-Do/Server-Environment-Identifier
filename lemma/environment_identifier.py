@@ -168,7 +168,7 @@ class Tomcat_Scanner:
     def stack_trace_scan(self):
         try:
             print("[*] stack trace scanning....")
-            response = requests.get(f"http://{self.host}/?f=\[", timeout=5)
+            response = requests.get(rf"http://{self.host}/?f=\[", timeout=5)
             if response.status_code == 400:
                 result = re.findall(r'org\.apache|tomcat', response.text)
                 if result:
@@ -216,7 +216,6 @@ class Tomcat_Scanner:
             print("[+] Tomcat server detected!!")
 
                     
-
 runner_spring = Runner()
 class Spring_Scanner:
     def __init__(self, host):
@@ -255,60 +254,36 @@ class Spring_Scanner:
             pass
         except requests.RequestException:
             pass
-        
-    #Spring Framework detect
+    
+    #Spring framework, Spring Security, Spring Boot detect
     @runner_spring.add_list
-    def powered_header_scan(self):
+    def response_header_scan(self):
         try:
-            print("[*] powered header scanning....")
+            print("[*] response header scanning....")
             cmd = command_line(f"http://{self.host}", "header")
             result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
             if result.returncode == 0:
+                #Spring Boot 
                 match_boot = re.search(r"X-Powered-By:\s*(SpringBoot|Spring Boot)\s*(\d+\.\d+\.\d+)?", result.stdout)
                 if match_boot:
                     print(f"[+] Spring Boot detected : ")
                     print(match_boot.group(0))
-                else:
-                    match_frame = re.search(r'X-Powered-By:\s*Spring\b', result.stdout)
-                    if match_frame:
-                        print(f"[+] Spring Framework detected!!")
-        except subprocess.TimeoutExpired:
-            pass
-        except Exception:
-            pass
-    
-    #Spring Security detect
-    @runner_spring.add_list
-    def auth_header_scan(self): 
-        try:
-            print("[*] authenticate header scanning....")
-            cmd = command_line(f"http://{self.host}", "header")
-            result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
-            if result.returncode == 0:
-                match1 = re.search(r'WWW-Authenticate:\s*Basic\s+realm="Spring"', result.stdout)
-                match2 = re.search(r'WWW-Authenticate:\s*Bearer', result.stdout)              
-                if match1 or match2:
+                
+                #Spring Security 
+                match_security1 = re.search(r'WWW-Authenticate:\s*Basic\s+realm="Spring"', result.stdout)
+                match_security2 = re.search(r'WWW-Authenticate:\s*Bearer', result.stdout)              
+                if match_security1 or match_security2:
                     print(f"[+] Spring Security detected!!")
+                
+                #Spring framework 
+                match_framework1 = re.search("org.springframework.web.servlet", result.stdout)
+                match_framework2 = re.search(r'X-Powered-By:\s*Spring\b', result.stdout)
+                if match_framework1 or match_framework2:
+                    print(f"[+] Spring framework detected!!")                   
         except subprocess.TimeoutExpired:
             pass
         except Exception:
-            pass
-    
-    #Spring framework, Spring Security detect
-    @runner_spring.add_list
-    def cookie_header_scan(self):
-        try:
-            print("[*] cookie header scanning....")
-            cmd = command_line(f"http://{self.host}", "header")
-            result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
-            if result.returncode == 0: 
-                match = re.search("org.springframework.web.servlet", result.stdout)
-                if match:
-                    print(f"[+] Spring framework detected!!")
-        except subprocess.TimeoutExpired:
-            pass
-        except Exception:
-            pass  
+            pass                       
     
     #Spring Boot detect
     @runner_spring.add_list
@@ -345,7 +320,7 @@ class Spring_Scanner:
     @runner_spring.add_list
     def req_res_scan(self):
         try:
-            print("[*] request and response scanning....")
+            print("[*] entities directory scanning....")
             response = requests.get(f"http://{self.host}/entities", timeout=5)
             if response.status_code == 200 and response.headers.get("Content-Type") == "application/json":
                 print(f"[+] Spring DATA and Spring DATA REST detected!!")
@@ -360,38 +335,6 @@ class PHP_Scanner:
     def __init__(self, host):
         self.host = host
         print("[PHP Scan Proccess]")
-        
-    @runner_php.add_list
-    def response_header_scan(self):
-        try:
-            print("[*] response header scanning....")
-            cmd = command_line(f"http://{self.host}", "header")
-            result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
-            if result.returncode == 0:
-                matches = re.findall(r'PHP/\d+\.\d+\.\d+', result.stdout)
-                if matches:
-                    print(f"[+] PHP detected: ")
-                    print("\n".join(matches))
-        except subprocess.TimeoutExpired:
-            pass
-        except Exception:
-            pass
-    
-    @runner_php.add_list
-    def warning_header_scan(self):
-        try:
-            print("[*] PHP warning header scanning....")
-            cmd = command_line(f"http://{self.host}", "header")
-            result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
-            if result.returncode == 0:
-                matches = re.findall(r"PHP Warning: [^\n]*(?:\n\s+.*?)*", result.stdout)
-                if matches:
-                    print(f"[+] PHP detected: ")
-                    print("\n".join(matches))
-        except subprocess.TimeoutExpired:
-            pass
-        except Exception:
-            pass
     
     @runner_php.add_list
     def warning_body_scan(self):
@@ -407,23 +350,37 @@ class PHP_Scanner:
         except subprocess.TimeoutExpired:
             pass
         except Exception:
-            pass
+            pass                                                                                            
     
     @runner_php.add_list
-    def php_cookie_scan(self):     
+    def response_header_scan(self):
         try:
-            print("[*] cookie header scanning....")
+            print("[*] response header scanning....")
             cmd = command_line(f"http://{self.host}", "header")
             result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
             if result.returncode == 0:
-                match = re.search(r"PHPSESSID=([^;]+)", result.stdout)
-                if match:
-                    print(f"[+] PHP detected: ")
-                    print(match.group(0))
+                #PHP version detect
+                matches_version = re.findall(r'PHP/\d+\.\d+\.\d+', result.stdout)
+                if matches_version:
+                    print(f"[+] PHP version detected: ")
+                    print("\n".join(matches_version))   
+                
+                #PHP warning header detect     
+                matches_warning = re.findall(r"PHP Warning: [^\n]*(?:\n\s+.*?)*", result.stdout)
+                if matches_warning:
+                    print(f"[+] PHP warning header detected: ")
+                    print("\n".join(matches_warning))  
+                    
+                #cookie header detect
+                match_cookie = re.search(r"PHPSESSID=([^;]+)", result.stdout)
+                if match_cookie:
+                    print(f"[+] PHP cookie header detected: ")
+                    print(match_cookie.group(0))                             
         except subprocess.TimeoutExpired:
             pass
         except Exception:
-            pass                                                                                                  
+            pass                                       
+    
     
     @runner_php.add_list
     def robots_directory_scan(self):
@@ -478,27 +435,14 @@ class PHP_Scanner:
         try:
             print("[*] response exposure scanning....")
             response = requests.get(f"http://{self.host}", timeout=5)
-            match = re.search(r"\.php", response.text)
-            if match:
-                print(f"[+] PHP detected!!")
+            match1 = re.search(r"\.php", response.text)
+            match2 = re.search(r"<!--.*?PHP.*?-->", response.text)
+            if match1 or match2:
+                print(f"[+] PHP detected in response exposure!!")
         except subprocess.TimeoutExpired:
             pass
         except Exception:
             pass
-    
-    @runner_php.add_list
-    def response_annotation_scan(self):
-        try:
-            print("[*] response annotation scanning....")
-            response = requests.get(f"http://{self.host}", timeout=5)
-            match = re.search(r"<!--.*?PHP.*?-->", response.text)
-            if match:
-                print(f"[+] PHP detected!!")
-        except subprocess.TimeoutExpired:
-            pass
-        except Exception:
-            pass             
-                     
                 
 def scan_result(host, fws):
     framework_map = {
