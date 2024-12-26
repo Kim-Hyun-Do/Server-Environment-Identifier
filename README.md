@@ -12,7 +12,7 @@ The environment_identifier.py is on lemma(https://github.com/sleepyeinstein/lemm
 
 ## Usage
 1. Make your lemma url there is environment_identifier.py as lemma usage(https://github.com/sleepyeinstein/lemma)
-![lemma result_up](https://github.com/user-attachments/assets/ec6631b4-cfa6-4202-acb7-001fea61ae21)
+![web cli](https://github.com/user-attachments/assets/99671c22-b6f4-4d8b-adf6-213f126f2eec)
 2. Input your lemma url in starter.py source code.
 3. Start starter.py!!
 
@@ -25,8 +25,10 @@ options:
   ```
 
 ## Result
-![ip only result_up](https://github.com/user-attachments/assets/40d998eb-fd5d-4678-a4ea-34f0174ba77c)
-![choose framework_up](https://github.com/user-attachments/assets/8ddc8b28-ac5d-4c32-a4f4-d199224bf25d)
+![terminal1](https://github.com/user-attachments/assets/eb539818-9950-4950-ac9f-8c7cc793786b)
+![terminal2](https://github.com/user-attachments/assets/8c89aa18-f15c-4460-82c3-2fa0716f1884)
+
+
 
 
 
