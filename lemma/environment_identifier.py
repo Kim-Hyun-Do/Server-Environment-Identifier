@@ -117,7 +117,6 @@ class Apache_Scanner:
         except requests.RequestException:
             pass                 
 
-
 runner_tomcat = Runner()
 class Tomcat_Scanner:
     def __init__(self, host):
@@ -297,10 +296,10 @@ class Spring_Scanner:
             result_pom = re.search("org.springframework.boot", res_pom.text)
             if result_pom or result_web:
                 print(f"[+] Spring Boot detected!!")
-        except subprocess.TimeoutExpired:
+        except requests.exceptions.Timeout:
             pass
-        except Exception:
-            pass  
+        except requests.RequestException:
+            pass 
     
     #Spring Boot detect
     @runner_spring.add_list
@@ -311,10 +310,10 @@ class Spring_Scanner:
             result = re.search("Spring Boot", response.text)
             if result:
                 print(f"[+] Spring Boot detected!!")
-        except subprocess.TimeoutExpired:
+        except requests.exceptions.Timeout:
             pass
-        except Exception:
-            pass                
+        except requests.RequestException:
+            pass               
 
     # Spring Data, Spring Data REST detect
     @runner_spring.add_list
@@ -324,12 +323,28 @@ class Spring_Scanner:
             response = requests.get(f"http://{self.host}/entities", timeout=5)
             if response.status_code == 200 and response.headers.get("Content-Type") == "application/json":
                 print(f"[+] Spring DATA and Spring DATA REST detected!!")
-        except subprocess.TimeoutExpired:
+        except requests.exceptions.Timeout:
             pass
-        except Exception:
-            pass       
+        except requests.RequestException:
+            pass      
     
-    
+    # Spring Data REST detect
+    @runner_spring.add_list
+    def api_res_scan(self):
+        try:
+            print("[*] api response scanning....")
+            response = requests.get(f"http://{self.host}/api", timeout=5)
+            if response.status_code // 100 == 2:  
+                content_type = response.headers.get("Content-Type", "")
+                if content_type.startswith("application/json") and "_links" in response.json():
+                    print("[+] Spring DATA REST detected!!")
+        except requests.exceptions.Timeout:
+            pass
+        except requests.RequestException:
+            pass  
+            
+
+            
 runner_php = Runner()
 class PHP_Scanner:
     def __init__(self, host):
@@ -415,7 +430,7 @@ class PHP_Scanner:
     @runner_php.add_list
     def directory_scan(self):
         try:
-            directories = ["/phpinfo.php", "/test.php"]
+            directories = ["/phpinfo.php", "/test.php", "/info.php", "/php.ini"]
             success = []
             print("[*] directory exposure scanning....")
             for directory in directories:
@@ -425,10 +440,10 @@ class PHP_Scanner:
             if success:
                 print(f"[+] PHP directory detected : ")
                 print("\n".join(success))
-        except subprocess.TimeoutExpired:
+        except requests.exceptions.Timeout:
             pass
-        except Exception:
-            pass             
+        except requests.RequestException:
+            pass           
     
     @runner_php.add_list
     def response_exposure_scan(self):
@@ -439,9 +454,9 @@ class PHP_Scanner:
             match2 = re.search(r"<!--.*?PHP.*?-->", response.text)
             if match1 or match2:
                 print(f"[+] PHP detected in response exposure!!")
-        except subprocess.TimeoutExpired:
+        except requests.exceptions.Timeout:
             pass
-        except Exception:
+        except requests.RequestException:
             pass
                 
 def scan_result(host, fws):
